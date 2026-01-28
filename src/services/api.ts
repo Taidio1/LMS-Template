@@ -3,7 +3,7 @@
  * Centralized service for all backend API calls with automatic JWT injection
  */
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Token management
 const getToken = (): string | null => localStorage.getItem('token');

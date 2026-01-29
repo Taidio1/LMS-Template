@@ -116,6 +116,7 @@ const getMyCourses = async (req, res) => {
 const getCourseById = async (req, res) => {
     try {
         const courseId = req.params.id;
+        const { userId, role } = req.user;
 
         // Get course details
         const [courseRows] = await db.execute(`
@@ -130,6 +131,24 @@ const getCourseById = async (req, res) => {
         }
 
         const course = courseRows[0];
+
+        // Authorization Check
+        if (role !== 'admin') {
+            // 1. Check if course is published
+            if (course.status !== 'published') {
+                return res.status(403).json({ error: 'Access denied. Course is not published.' });
+            }
+
+            // 2. Check if user is assigned to the course
+            const [assignmentRows] = await db.execute(
+                'SELECT id FROM course_assignments WHERE user_id = ? AND course_id = ?',
+                [userId, courseId]
+            );
+
+            if (assignmentRows.length === 0) {
+                return res.status(403).json({ error: 'Access denied. You are not assigned to this course.' });
+            }
+        }
 
         // Get chapters (Unified content)
         const [chapterRows] = await db.execute(

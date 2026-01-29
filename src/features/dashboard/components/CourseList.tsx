@@ -1,8 +1,7 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { CourseCard } from './CourseCard';
-import { MOCK_COURSES } from '../api/mockData';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
 import { CourseAssignment, TrainingCourse } from '@/types';
 
 interface CourseListProps {
@@ -10,17 +9,32 @@ interface CourseListProps {
 }
 
 export const CourseList: React.FC<CourseListProps> = ({ courses: propCourses }) => {
-    const { data: fetchedCourses, isLoading, isError } = useQuery({
-        queryKey: ['courses'],
+    const queryClient = useQueryClient();
+    const queryKey = ['courses', 'assigned'];
+
+    const {
+        data: fetchedCourses,
+        isLoading,
+        isError,
+        isFetching,
+        refetch
+    } = useQuery({
+        queryKey: queryKey,
         queryFn: async () => {
             // Simulate network delay
             await new Promise((resolve) => setTimeout(resolve, 800));
-            return MOCK_COURSES;
         },
-        enabled: !propCourses // Only fetch if no props provided
+        enabled: !propCourses, // Only fetch if no props provided
+        staleTime: 5 * 60 * 1000, // 5 minutes
     });
 
     const courses = propCourses || fetchedCourses;
+
+    const handleRefresh = async () => {
+        // Invalidate queries to ensure fresh data from strict source of truth
+        // This triggers a refetch in the background
+        await queryClient.invalidateQueries({ queryKey });
+    };
 
     if (isLoading) {
         return (
@@ -37,10 +51,12 @@ export const CourseList: React.FC<CourseListProps> = ({ courses: propCourses }) 
                 <AlertTriangle className="w-10 h-10 mb-3" />
                 <p className="font-medium">Failed to load courses</p>
                 <button
-                    onClick={() => window.location.reload()}
-                    className="mt-4 px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors"
+                    onClick={() => refetch()}
+                    disabled={isFetching}
+                    className="mt-4 px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    Try Again
+                    {isFetching ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                    {isFetching ? 'Retrying...' : 'Try Again'}
                 </button>
             </div>
         );
@@ -50,6 +66,13 @@ export const CourseList: React.FC<CourseListProps> = ({ courses: propCourses }) 
         return (
             <div className="text-center py-12 text-gray-500">
                 <p>No courses assigned to you yet.</p>
+                <button
+                    onClick={handleRefresh}
+                    className="mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center justify-center gap-2 mx-auto"
+                >
+                    <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
+                    Refresh List
+                </button>
             </div>
         );
     }
@@ -78,8 +101,18 @@ export const CourseList: React.FC<CourseListProps> = ({ courses: propCourses }) 
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-900">Your Training</h2>
-                <div className="text-sm text-gray-500">
-                    {sortedCourses.length} Assigned Course{sortedCourses.length !== 1 ? 's' : ''}
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={handleRefresh}
+                        disabled={isFetching}
+                        className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50"
+                        title="Refresh courses"
+                    >
+                        <RefreshCw className={`w-5 h-5 ${isFetching ? 'animate-spin' : ''}`} />
+                    </button>
+                    <div className="text-sm text-gray-500">
+                        {sortedCourses.length} Assigned Course{sortedCourses.length !== 1 ? 's' : ''}
+                    </div>
                 </div>
             </div>
 

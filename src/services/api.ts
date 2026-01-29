@@ -5,6 +5,8 @@
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
+export const AUTH_EVENT_NAME = 'auth:unauthorized';
+
 // Token management
 const getToken = (): string | null => localStorage.getItem('token');
 const setToken = (token: string): void => localStorage.setItem('token', token);
@@ -279,10 +281,10 @@ async function apiFetch<T>(
     }
 
     if (!response.ok) {
-        // Handle 401 - clear token and redirect to login
+        // Handle 401 - clear token and dispatch auth event
         if (response.status === 401) {
             removeToken();
-            window.location.href = '/login';
+            window.dispatchEvent(new CustomEvent(AUTH_EVENT_NAME));
         }
         throw new ApiError(response, data);
     }

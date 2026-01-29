@@ -1,7 +1,7 @@
 import { createContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { User, UserRole } from '@/types';
-import { useNavigate } from 'react-router-dom';
-import { api, ApiError } from '@/services/api';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { api, ApiError, AUTH_EVENT_NAME } from '@/services/api';
 
 interface AuthContextType {
     user: User | null;
@@ -21,6 +21,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
+    const location = useLocation();
 
     // Check for existing token on mount
     useEffect(() => {
@@ -45,6 +46,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         initAuth();
     }, []);
+
+    // Listen for auth errors (401) from API
+    useEffect(() => {
+        const handleAuthError = () => {
+            setUser(null);
+            // Redirect to login but save the current location to redirect back after login
+            navigate('/login', {
+                state: { from: location },
+                replace: true
+            });
+        };
+
+        window.addEventListener(AUTH_EVENT_NAME, handleAuthError);
+        return () => window.removeEventListener(AUTH_EVENT_NAME, handleAuthError);
+    }, [navigate, location]);
 
     const login = useCallback(async (email: string, password: string) => {
         setIsLoading(true);

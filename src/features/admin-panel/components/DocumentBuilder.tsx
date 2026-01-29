@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Chapter } from './ChapterList';
 import { FileText, Upload, X, Eye } from 'lucide-react';
+import api from '@/services/api';
 
 interface DocumentBuilderProps {
     chapter: Chapter;
@@ -15,30 +16,9 @@ export const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ chapter, onCha
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Validation
-        // Note: MIME types for PPT/PPTX can vary, checking extension is also good practice but basic MIME check here.
-        // Let backend handle strict validation.
-
-        const formData = new FormData();
-        formData.append('file', file);
-
         setIsUploading(true);
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/upload`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                },
-                body: formData
-            });
-
-            if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.error || 'Upload failed');
-            }
-
-            const data = await response.json();
+            const data = await api.files.upload(file);
 
             // Update chapter content
             onChange({
@@ -56,7 +36,7 @@ export const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ chapter, onCha
 
         } catch (error: any) {
             console.error('Upload Error:', error);
-            alert(`Upload failed: ${error.message}`);
+            alert(`Upload failed: ${error.message || 'Unknown error'}`);
         } finally {
             setIsUploading(false);
         }

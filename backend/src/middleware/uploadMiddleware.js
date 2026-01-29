@@ -23,16 +23,16 @@ const storage = multer.diskStorage({
 
 // File filter
 const fileFilter = (req, file, cb) => {
-    // Allowed extensions: .pdf, .ppt, .pptx
-    const allowedTypes = /pdf|ppt|pptx/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
+    const allowedExtensions = /^\.(pdf|ppt|pptx)$/i;
+    const allowedMimeTypes = /^(application\/pdf|application\/vnd\.ms-powerpoint|application\/vnd\.openxmlformats-officedocument\.presentationml\.presentation)$/;
 
-    if (extname) { // mimetype check can be flaky for ppt, relying on extension is often safer for legacy types, but double check is good.
+    const extname = allowedExtensions.test(path.extname(file.originalname));
+    const mimetype = allowedMimeTypes.test(file.mimetype);
+
+    if (extname && mimetype) {
         return cb(null, true);
-    } else {
-        cb(new Error('Only PDF, PPT, and PPTX files are allowed!'));
     }
+    cb(new Error('Error: Only .pdf and .ppt/.pptx files are allowed!'), false);
 };
 
 const upload = multer({

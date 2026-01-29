@@ -258,7 +258,7 @@ async function apiFetch<T>(
     const token = getToken();
 
     const headers: HeadersInit = {
-        'Content-Type': 'application/json',
+        ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
         ...options.headers,
     };
 
@@ -502,6 +502,18 @@ export const api = {
             return apiFetch('/users/bulk-assign', {
                 method: 'POST',
                 body: JSON.stringify({ userIds, courseIds, deadlineDays }),
+            });
+        },
+    },
+
+    // Generic File Upload
+    files: {
+        upload: async (file: File): Promise<{ url: string; filename: string; originalName: string; mimetype: string; size: number }> => {
+            const formData = new FormData();
+            formData.append('file', file);
+            return apiFetch<{ url: string; filename: string; originalName: string; mimetype: string; size: number }>('/upload', {
+                method: 'POST',
+                body: formData,
             });
         },
     },

@@ -65,7 +65,12 @@ export const courseService = {
     getChapters: async (courseId: string): Promise<Chapter[]> => {
         try {
             const course: any = await api.courses.getById(courseId);
-            return course.chapters || [];
+            return (course.chapters || []).map((ch: any) => {
+                if (ch.type === 'video' && (ch.content?.isDocument || ch.content?.fileType === 'pdf' || ch.content?.fileType === 'ppt')) {
+                    return { ...ch, type: 'document' };
+                }
+                return ch;
+            });
         } catch (error) {
             console.error('Failed to fetch chapters', error);
             return [];
@@ -73,7 +78,24 @@ export const courseService = {
     },
 
     saveChapters: async (courseId: string, chapters: Chapter[]): Promise<void> => {
-        await api.courses.updateChapters(courseId, chapters);
+        const mappedChapters = chapters.map(ch => {
+            if (ch.type === 'document') {
+                return {
+                    ...ch,
+                    type: 'video', // Map to allowed DB ENUM
+                    content: { ...ch.content, isDocument: true }
+                };
+            }
+            // For quizzes, ensure type is 'quiz'
+            if (ch.type === 'quiz') return { ...ch, type: 'quiz' };
+            // For videos, ensure type is 'video'
+            if (ch.type === 'video') return { ...ch, type: 'video' };
+            // For slides, ensure type is 'slide'
+            if (ch.type === 'slide') return { ...ch, type: 'slide' };
+
+            return ch;
+        });
+        await api.courses.updateChapters(courseId, mappedChapters);
     },
 
     // User Methods

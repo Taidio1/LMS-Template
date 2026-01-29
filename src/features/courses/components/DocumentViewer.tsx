@@ -28,7 +28,11 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({ content, onCompl
     const [scale, setScale] = useState<number>(1.0);
     const [error, setError] = useState<string | null>(null);
 
-    const fullUrl = content.url ? `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${content.url}` : null;
+    const fullUrl = content.url
+        ? (content.url.startsWith('/uploads')
+            ? content.url
+            : `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${content.url}`)
+        : null;
     const isPdf = content.fileType === 'pdf';
 
     function onDocumentLoadSuccess({ numPages }: { numPages: number }) {

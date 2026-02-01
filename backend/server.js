@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const db = require('./src/config/database');
 
 // Import routes
 const authRoutes = require('./src/routes/authRoutes');
@@ -21,8 +22,14 @@ app.use(cors({
 app.use(express.json());
 
 // Health check
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+// Health check
+app.get('/api/health', async (req, res) => {
+    try {
+        await db.query('SELECT 1');
+        res.json({ status: 'ok', db: 'connected', timestamp: new Date().toISOString() });
+    } catch (error) {
+        res.status(500).json({ status: 'error', db: 'disconnected', error: error.message, timestamp: new Date().toISOString() });
+    }
 });
 
 // Routes

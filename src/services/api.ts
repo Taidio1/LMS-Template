@@ -325,6 +325,13 @@ export const api = {
 
         getToken,
         removeToken,
+
+        changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
+            await apiFetch('/auth/change-password', {
+                method: 'POST',
+                body: JSON.stringify({ currentPassword, newPassword }),
+            });
+        },
     },
 
     // Category endpoints

@@ -107,4 +107,57 @@ const logout = async (req, res) => {
     res.json({ message: 'Logged out successfully' });
 };
 
-module.exports = { login, me, logout };
+/**
+ * POST /api/auth/change-password
+ * Change current user's password
+ */
+const changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const userId = req.user.userId;
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ error: 'Current and new password are required' });
+        }
+
+        if (newPassword.length < 8) {
+            return res.status(400).json({ error: 'New password must be at least 8 characters long' });
+        }
+
+        // 1. Get user with password hash
+        const [rows] = await db.execute(
+            'SELECT id, password_hash FROM users WHERE id = ?',
+            [userId]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const user = rows[0];
+
+        // 2. Verify current password
+        const isValid = await bcrypt.compare(currentPassword, user.password_hash);
+        if (!isValid) {
+            return res.status(400).json({ error: 'Invalid current password' });
+        }
+
+        // 3. Hash new password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        // 4. Update password in DB
+        await db.execute(
+            'UPDATE users SET password_hash = ? WHERE id = ?',
+            [hashedPassword, userId]
+        );
+
+        res.json({ message: 'Password changed successfully' });
+
+    } catch (error) {
+        console.error('Change password error:', error);
+        res.status(500).json({ error: 'Failed to change password' });
+    }
+};
+
+module.exports = { login, me, logout, changePassword };

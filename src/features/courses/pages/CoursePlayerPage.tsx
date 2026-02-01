@@ -17,6 +17,7 @@ export const CoursePlayerPage: React.FC = () => {
     const [course, setCourse] = useState<any>(null);
     const [chapters, setChapters] = useState<PlayerChapter[]>([]);
     const [currentChapterId, setCurrentChapterId] = useState<string | null>(null);
+    const [assignmentId, setAssignmentId] = useState<string | null>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [loading, setLoading] = useState(true);
     const [isCourseFinished, setIsCourseFinished] = useState(false);
@@ -37,24 +38,26 @@ export const CoursePlayerPage: React.FC = () => {
             if (!courseData) throw new Error('Course not found');
             setCourse(courseData);
 
-            // 2. Fetch Chapters
+            // 2. Fetch Assignment ID
+            const fetchedAssignmentId = await courseService.getAssignment(courseId);
+            if (!fetchedAssignmentId) {
+                // If not assigned, we should probably redirect or show error
+                // For now, let's treat it as critical
+                throw new Error('User is not assigned to this course');
+            }
+            setAssignmentId(fetchedAssignmentId);
+
+            // 3. Fetch Chapters
             const chaptersData = await courseService.getChapters(courseId);
 
-            // 3. Fetch User Progress (returns map with status + answers)
-            const progressData = await courseService.getUserProgress(user.id, courseId);
+            // 4. Fetch User Progress (returns map with status + answers)
+            // Use ASSIGNMENT_ID here
+            const progressData = await courseService.getUserProgress(user.id, fetchedAssignmentId);
 
-            // 4. Calculate Statuses
+            // 5. Calculate Statuses
             const processedChapters: PlayerChapter[] = chaptersData.map((ch: any, index: number) => {
                 const chapterProgress = progressData[ch.id];
                 const status = chapterProgress ? chapterProgress.status : 'locked';
-
-                // Logic to unlock:
-                // If it is explicitly marked as 'completed' or 'unlocked', use that.
-                // Otherwise, check previous chapter.
-
-                // However, the service returns the status directly if we had a smarter backend.
-                // For now, let's keep the frontend logic to "unlock" next chapters if previous is done,
-                // in case the backend only stores "completed".
 
                 let computedStatus = status;
 
@@ -74,12 +77,6 @@ export const CoursePlayerPage: React.FC = () => {
                     }
                 }
 
-                // Attach saved answers to the chapter object in memory if needed, or we can look it up in render.
-                // Let's attach it to 'content' effectively or keep it separate.
-                // Ideally, we shouldn't mutate 'ch' like this if it's strict, but 'processedChapters' is PlayerChapter.
-                // Let's add 'answers' to our local 'PlayerChapter' or just lookup in render.
-                // Lookup in render is safer. We need to store 'progressData' in state? 
-                // Or just map it here.
                 return {
                     ...ch,
                     status: computedStatus,
@@ -91,20 +88,15 @@ export const CoursePlayerPage: React.FC = () => {
 
             // Set Initial Chapter (First Unlocked)
             if (!currentChapterId) {
-                // Find first non-completed or last unlocked
-                // Usually user wants to continue where they left off
                 const firstIncomplete = processedChapters.find(c => c.status !== 'completed' && c.status !== 'locked');
                 if (firstIncomplete) {
                     setCurrentChapterId(firstIncomplete.id);
                 } else if (processedChapters.length > 0) {
-                    // All completed, show first
                     setCurrentChapterId(processedChapters[0].id);
                 }
             } else {
-                // Re-verify current chapter is not locked (e.g. if we just loaded)
                 const current = processedChapters.find(c => c.id === currentChapterId);
                 if (current && current.status === 'locked') {
-                    // Redirect to safe chapter
                     const firstIncomplete = processedChapters.find(c => c.status !== 'completed' && c.status !== 'locked');
                     setCurrentChapterId(firstIncomplete ? firstIncomplete.id : processedChapters[0].id);
                 }
@@ -112,45 +104,36 @@ export const CoursePlayerPage: React.FC = () => {
 
         } catch (error) {
             console.error('Error loading course:', error);
-            // Handle error
+            // Handle error (e.g. redirect to dashboard)
         } finally {
             setLoading(false);
         }
     };
 
     const handleChapterSave = async (score?: number, answers?: any[]) => {
-        if (!currentChapterId || !user || !courseId) return;
+        if (!currentChapterId || !user || !assignmentId) return;
         try {
             console.log('[CoursePlayerPage] handleChapterSave called with:', { score, answers });
-            // Just update DB, don't trigger re-fetch or navigation yet
-            await courseService.updateChapterProgress(user.id, courseId, currentChapterId, 'completed', score, answers);
+            await courseService.updateChapterProgress(user.id, assignmentId, currentChapterId, 'completed', score, answers);
         } catch (error) {
             console.error('Error saving progress:', error);
         }
     };
 
     const handleChapterComplete = async (score?: number) => {
-        if (!currentChapterId || !user || !courseId) return;
+        if (!currentChapterId || !user || !assignmentId) return;
 
         try {
-            // Update DB (idempotent, ensures it's saved if onSave wasn't called or failed)
-            await courseService.updateChapterProgress(user.id, courseId, currentChapterId, 'completed', score);
-
-            // Reload data to update locks
+            await courseService.updateChapterProgress(user.id, assignmentId, currentChapterId, 'completed', score);
             await loadCourseData();
 
-            // Auto-advance to next chapter if exists
             const currentIndex = chapters.findIndex(c => c.id === currentChapterId);
             if (currentIndex < chapters.length - 1) {
                 const nextChapter = chapters[currentIndex + 1];
-                // Local check: it SHOULD be unlocking now, but we just reloaded data so it should be fine.
-                // We set current ID to next
                 setCurrentChapterId(nextChapter.id);
             } else {
-                // Course Last Chapter Finished
-                // Instead of auto-completing, we set the state to show the manual finish button
                 setIsCourseFinished(true);
-                setCurrentChapterId(null); // Clear current chapter to show the finish screen
+                setCurrentChapterId(null);
             }
 
         } catch (error) {
@@ -159,9 +142,9 @@ export const CoursePlayerPage: React.FC = () => {
     };
 
     const finishCourse = async () => {
-        if (!user || !courseId) return;
+        if (!user || !assignmentId) return;
         try {
-            await courseService.updateCourseStatus(user.id, courseId, 'completed');
+            await courseService.updateCourseStatus(user.id, assignmentId, 'completed');
             if (confirm('Congratulations! You have completed the course. Return to dashboard?')) {
                 navigate('/dashboard');
             }

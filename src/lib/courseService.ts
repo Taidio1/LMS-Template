@@ -99,8 +99,22 @@ export const courseService = {
     },
 
     // User Methods
+    getAssignment: async (courseId: string): Promise<string | null> => {
+        try {
+            // Since we don't have a direct "get assignment by course" endpoint yet,
+            // we fetch all my courses and find the one matching this courseId.
+            const myCourses = await api.courses.getMyCourses();
+            const assignment = myCourses.find(c => c.courseId === courseId || c.course.id === courseId);
+            return assignment ? assignment.id : null;
+        } catch (error) {
+            console.error('Failed to get course assignment', error);
+            return null;
+        }
+    },
+
     getUserProgress: async (_userId: string, assignmentId: string): Promise<Record<string, { status: 'locked' | 'unlocked' | 'completed', answers?: any[] }>> => {
         try {
+            // Note: assignmentId MUST be the assignment UUID, not course UUID
             const response = await api.progress.get(assignmentId);
             const progressMap: Record<string, { status: 'locked' | 'unlocked' | 'completed', answers?: any[] }> = {};
 

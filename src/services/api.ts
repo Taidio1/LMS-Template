@@ -413,6 +413,12 @@ export const api = {
                 method: 'POST',
             });
         },
+
+        restore: async (id: string): Promise<{ message: string; status: string }> => {
+            return apiFetch<{ message: string; status: string }>(`/courses/${id}/restore`, {
+                method: 'POST',
+            });
+        },
     },
 
     // Progress endpoints

@@ -638,6 +638,34 @@ const archiveCourse = async (req, res) => {
     }
 };
 
+/**
+ * POST /api/courses/:id/restore (Admin only)
+ * Restore an archived course (change status from archived to draft)
+ */
+const restoreCourse = async (req, res) => {
+    try {
+        const courseId = req.params.id;
+
+        // Check if course exists
+        const [existing] = await db.execute('SELECT * FROM courses WHERE id = ?', [courseId]);
+        if (existing.length === 0) {
+            return res.status(404).json({ error: 'Course not found' });
+        }
+
+        const course = existing[0];
+        if (course.status !== 'archived') {
+            return res.status(400).json({ error: 'Course is not archived' });
+        }
+
+        await db.execute("UPDATE courses SET status = 'draft' WHERE id = ?", [courseId]);
+
+        res.json({ message: 'Course restored successfully', status: 'draft' });
+    } catch (error) {
+        console.error('Restore course error:', error);
+        res.status(500).json({ error: 'Failed to restore course' });
+    }
+};
+
 module.exports = {
     getMyCourses,
     getCourseById,
@@ -647,5 +675,7 @@ module.exports = {
     updateChapters,
     deleteCourse,
     publishCourse,
-    archiveCourse
+    publishCourse,
+    archiveCourse,
+    restoreCourse
 };

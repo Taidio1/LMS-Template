@@ -18,5 +18,6 @@ router.put('/:id/chapters', requireRole('admin'), courseController.updateChapter
 router.delete('/:id', requireRole('admin'), courseController.deleteCourse);
 router.post('/:id/publish', requireRole('admin'), courseController.publishCourse);
 router.post('/:id/archive', requireRole('admin'), courseController.archiveCourse);
+router.post('/:id/restore', requireRole('admin'), courseController.restoreCourse);
 
 module.exports = router;

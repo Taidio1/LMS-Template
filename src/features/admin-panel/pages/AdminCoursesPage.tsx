@@ -51,6 +51,13 @@ export const AdminCoursesPage = () => {
         },
     });
 
+    const restoreMutation = useMutation({
+        mutationFn: api.courses.restore,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-courses'] });
+        },
+    });
+
     const deleteMutation = useMutation({
         mutationFn: api.courses.delete,
         onSuccess: () => {
@@ -215,6 +222,7 @@ export const AdminCoursesPage = () => {
                                     onSelectCourse={setSelectedCourseId}
                                     onPublish={(id: string) => publishMutation.mutate(id)}
                                     onArchive={(id: string) => archiveMutation.mutate(id)}
+                                    onRestore={(id: string) => restoreMutation.mutate(id)}
                                     onDelete={(id: string) => {
                                         setCourseToDelete(id);
                                     }}

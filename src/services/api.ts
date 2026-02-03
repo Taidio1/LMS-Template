@@ -537,6 +537,18 @@ export const api = {
     health: async (): Promise<{ status: string; timestamp: string }> => {
         return apiFetch('/health');
     },
+
+    // Generic methods
+    get: async <T>(endpoint: string): Promise<T> => {
+        return apiFetch<T>(endpoint);
+    },
+
+    post: async <T>(endpoint: string, data?: any): Promise<T> => {
+        return apiFetch<T>(endpoint, {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    },
 };
 
 export default api;

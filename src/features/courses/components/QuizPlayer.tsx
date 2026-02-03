@@ -6,10 +6,11 @@ interface QuizPlayerProps {
     content: any;
     onComplete: (score: number) => void;
     onSave?: (score: number, answers?: any[]) => Promise<void>;
+    onAnswerChange?: (questionId: string, optionIndex: number) => void;
     initialAnswers?: any[];
 }
 
-export const QuizPlayer: React.FC<QuizPlayerProps> = ({ content, onComplete, onSave, initialAnswers }) => {
+export const QuizPlayer: React.FC<QuizPlayerProps> = ({ content, onComplete, onSave, onAnswerChange, initialAnswers }) => {
     const questions: Question[] = content.questions || [];
 
     // Initialize state from potential saved answers
@@ -72,6 +73,9 @@ export const QuizPlayer: React.FC<QuizPlayerProps> = ({ content, onComplete, onS
             ...prev,
             [questionId]: optionIndex
         }));
+        if (onAnswerChange) {
+            onAnswerChange(questionId, optionIndex);
+        }
     };
 
     const handleSubmit = async () => {

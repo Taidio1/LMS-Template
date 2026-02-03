@@ -40,6 +40,7 @@ app.use('/api/programs', programRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/upload', require('./src/routes/uploadRoutes'));
+app.use('/api/tests', require('./src/routes/testRoutes'));
 
 // Serve uploaded files statically
 const path = require('path');

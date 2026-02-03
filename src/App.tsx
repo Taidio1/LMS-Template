@@ -12,6 +12,9 @@ import { AdminCoursesPage } from '@/features/admin-panel/pages/AdminCoursesPage'
 import { CoursePlayerPage } from '@/features/courses/pages/CoursePlayerPage';
 import { UserProfilePage } from '@/features/profile/pages/UserProfilePage';
 import { MyCoursesPage } from '@/features/dashboard/pages/MyCoursesPage';
+import { TestingAdminPage } from '@/modules/testing/pages/TestingAdminPage';
+import { TestingLearnerPage } from '@/modules/testing/pages/TestingLearnerPage';
+import { TestSessionPage } from '@/modules/testing/pages/TestSessionPage';
 
 const queryClient = new QueryClient();
 
@@ -74,6 +77,10 @@ const App = () => {
                             <Route path="/profile" element={<UserProfilePage />} />
                             <Route path="/history" element={<div>History Placeholder</div>} />
 
+                            {/* Testing Module Demo */}
+                            <Route path="/test-demo" element={<TestingLearnerPage />} />
+                            <Route path="/testing/session/:assignmentId" element={<TestSessionPage />} />
+
                             {/* Admin Routes */}
                             <Route path="/admin/dashboard" element={
                                 <ProtectedRoute allowedRoles={['admin']}>
@@ -97,7 +104,7 @@ const App = () => {
                             } />
                             <Route path="/admin/tests" element={
                                 <ProtectedRoute allowedRoles={['admin']}>
-                                    <div>Tests Management Placeholder</div>
+                                    <TestingAdminPage />
                                 </ProtectedRoute>
                             } />
                             <Route path="/admin/settings" element={

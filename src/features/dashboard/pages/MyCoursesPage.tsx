@@ -15,12 +15,17 @@ type EnrichedCourse = CourseAssignmentResponse & {
     };
 };
 
+import { TestList } from '@/modules/testing/components/learner/TestList';
+import { cn } from '@/lib/utils';
+
 export const MyCoursesPage = () => {
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [categoryFilter, setCategoryFilter] = useState('all');
+    const [activeMainTab, setActiveMainTab] = useState<'courses' | 'tests'>('courses');
     const [activeTab, setActiveTab] = useState<'assigned' | 'available' | 'completed'>('assigned');
+
 
     // Fetch courses from API
     const { data: apiCourses, isLoading, error } = useQuery({
@@ -205,85 +210,117 @@ export const MyCoursesPage = () => {
             />
 
             <div className="flex flex-col space-y-4">
-                {/* Tabs */}
-                <div className="border-b border-gray-200">
-                    <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-                        {[
-                            { id: 'assigned', name: 'Assigned to Me' },
-                            { id: 'available', name: 'Available' },
-                            { id: 'completed', name: 'Completed History' },
-                        ].map((tab) => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id as any)}
-                                className={`
-                                    whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm
-                                    ${activeTab === tab.id
-                                        ? 'border-sky-500 text-sky-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
-                                `}
-                            >
-                                {tab.name}
-                            </button>
-                        ))}
-                    </nav>
+                {/* Main View Tabs */}
+                <div className="flex gap-4 border-b border-gray-200">
+                    <button
+                        onClick={() => setActiveMainTab('courses')}
+                        className={cn(
+                            "pb-3 px-1 text-sm font-medium border-b-2 transition-colors",
+                            activeMainTab === 'courses'
+                                ? "border-blue-500 text-blue-600"
+                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                        )}
+                    >
+                        My Courses
+                    </button>
+                    <button
+                        onClick={() => setActiveMainTab('tests')}
+                        className={cn(
+                            "pb-3 px-1 text-sm font-medium border-b-2 transition-colors",
+                            activeMainTab === 'tests'
+                                ? "border-blue-500 text-blue-600"
+                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                        )}
+                    >
+                        My Tests
+                    </button>
                 </div>
 
-                <CourseFilterBar
-                    searchQuery={searchQuery}
-                    onSearchChange={setSearchQuery}
-                    statusFilter={statusFilter}
-                    onStatusFilterChange={setStatusFilter}
-                    categoryFilter={categoryFilter}
-                    onCategoryFilterChange={setCategoryFilter}
-                    availableCategories={availableCategories}
-                />
-
-                <div className="space-y-8">
-                    {Object.keys(groupedFilteredCourses).length > 0 ? (
-                        Object.entries(groupedFilteredCourses).map(([category, items]) => (
-                            <div key={category} className="space-y-4">
-                                <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                                    <span className="w-1.5 h-6 bg-blue-500 rounded-full"></span>
-                                    {category}
-                                    <span className="text-sm font-normal text-gray-500">({items.length})</span>
-                                </h2>
-                                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                    {items.map((item) => (
-                                        <div
-                                            key={item.id}
-                                            onClick={() => handleStartCourse(item.courseId, item.isLocked)}
-                                            className={!item.isLocked ? "cursor-pointer" : "cursor-not-allowed"}
-                                        >
-                                            <CourseCard
-                                                assignment={{
-                                                    id: item.id,
-                                                    userId: item.userId,
-                                                    courseId: item.courseId,
-                                                    assignedAt: item.assignedAt,
-                                                    deadline: item.deadline,
-                                                    status: item.status,
-                                                    completedAt: item.completedAt,
-                                                    progress: 0 // TODO: Get from progress API
-                                                }}
-                                                courseTitle={item.course.title}
-                                                courseDescription={item.course.description}
-                                                isLocked={item.isLocked}
-                                                secondsRemaining={item.secondsRemaining}
-                                                isOverdue={item.isOverdue}
-                                                isUrgent={item.isUrgent}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        ))
-                    ) : (
-                        <div className="col-span-full text-center py-12 text-gray-500">
-                            No courses found matching your criteria.
+                {activeMainTab === 'courses' ? (
+                    <>
+                        {/* Sub-Tabs for Courses */}
+                        <div className="border-b border-gray-200">
+                            <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+                                {[
+                                    { id: 'assigned', name: 'Assigned to Me' },
+                                    { id: 'available', name: 'Available' },
+                                    { id: 'completed', name: 'Completed History' },
+                                ].map((tab) => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id as any)}
+                                        className={`
+                                            whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm
+                                            ${activeTab === tab.id
+                                                ? 'border-sky-500 text-sky-600'
+                                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
+                                        `}
+                                    >
+                                        {tab.name}
+                                    </button>
+                                ))}
+                            </nav>
                         </div>
-                    )}
-                </div>
+
+                        <CourseFilterBar
+                            searchQuery={searchQuery}
+                            onSearchChange={setSearchQuery}
+                            statusFilter={statusFilter}
+                            onStatusFilterChange={setStatusFilter}
+                            categoryFilter={categoryFilter}
+                            onCategoryFilterChange={setCategoryFilter}
+                            availableCategories={availableCategories}
+                        />
+
+                        <div className="space-y-8">
+                            {Object.keys(groupedFilteredCourses).length > 0 ? (
+                                Object.entries(groupedFilteredCourses).map(([category, items]) => (
+                                    <div key={category} className="space-y-4">
+                                        <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                                            <span className="w-1.5 h-6 bg-blue-500 rounded-full"></span>
+                                            {category}
+                                            <span className="text-sm font-normal text-gray-500">({items.length})</span>
+                                        </h2>
+                                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                            {items.map((item) => (
+                                                <div
+                                                    key={item.id}
+                                                    onClick={() => handleStartCourse(item.courseId, item.isLocked)}
+                                                    className={!item.isLocked ? "cursor-pointer" : "cursor-not-allowed"}
+                                                >
+                                                    <CourseCard
+                                                        assignment={{
+                                                            id: item.id,
+                                                            userId: item.userId,
+                                                            courseId: item.courseId,
+                                                            assignedAt: item.assignedAt,
+                                                            deadline: item.deadline,
+                                                            status: item.status,
+                                                            completedAt: item.completedAt,
+                                                            progress: 0 // TODO: Get from progress API
+                                                        }}
+                                                        courseTitle={item.course.title}
+                                                        courseDescription={item.course.description}
+                                                        isLocked={item.isLocked}
+                                                        secondsRemaining={item.secondsRemaining}
+                                                        isOverdue={item.isOverdue}
+                                                        isUrgent={item.isUrgent}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="col-span-full text-center py-12 text-gray-500">
+                                    No courses found matching your criteria.
+                                </div>
+                            )}
+                        </div>
+                    </>
+                ) : (
+                    <TestList />
+                )}
             </div>
         </div>
     );

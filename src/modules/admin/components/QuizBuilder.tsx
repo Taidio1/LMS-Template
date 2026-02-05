@@ -7,12 +7,8 @@ interface QuizBuilderProps {
     onChange: (updatedChapter: Chapter) => void;
 }
 
-export interface Question {
-    id: string;
-    question: string;
-    options: string[];
-    correctOptionIndex: number;
-}
+import { Question } from '../../../shared/types/quiz';
+
 
 export const QuizBuilder: React.FC<QuizBuilderProps> = ({ chapter, onChange }) => {
     const questions: Question[] = chapter.content?.questions || [];
@@ -100,8 +96,8 @@ export const QuizBuilder: React.FC<QuizBuilderProps> = ({ chapter, onChange }) =
                                     <button
                                         onClick={() => updateQuestion(q.id, 'correctOptionIndex', i)}
                                         className={`flex-shrink-0 w-6 h-6 rounded-full border flex items-center justify-center transition-colors ${q.correctOptionIndex === i
-                                                ? 'bg-green-500 border-green-500 text-white'
-                                                : 'border-gray-300 text-transparent hover:border-gray-400'
+                                            ? 'bg-green-500 border-green-500 text-white'
+                                            : 'border-gray-300 text-transparent hover:border-gray-400'
                                             }`}
                                     >
                                         <CheckCircle2 size={14} />

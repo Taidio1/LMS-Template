@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTestSession } from '../context/TestSessionContext';
-import { QuizPlayer } from '../../../features/courses/components/QuizPlayer';
+import { QuizPlayer } from './shared/QuizPlayer';
 
 export const QuizAdapter: React.FC = () => {
     const navigate = useNavigate();

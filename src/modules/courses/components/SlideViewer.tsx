@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
-import { Slide } from '../../admin-panel/components/SlideBuilder';
+import { Slide } from '../../../shared/types/slide';
 
 interface SlideViewerProps {
     content: any;
@@ -82,8 +82,8 @@ export const SlideViewer: React.FC<SlideViewerProps> = ({ content, onComplete })
                         <div
                             key={idx}
                             className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentSlideIndex
-                                    ? 'w-8 bg-blue-500'
-                                    : idx <= maxViewedIndex ? 'w-4 bg-blue-200' : 'w-2 bg-gray-200'
+                                ? 'w-8 bg-blue-500'
+                                : idx <= maxViewedIndex ? 'w-4 bg-blue-200' : 'w-2 bg-gray-200'
                                 }`}
                         />
                     ))}
@@ -92,8 +92,8 @@ export const SlideViewer: React.FC<SlideViewerProps> = ({ content, onComplete })
                 <button
                     onClick={handleNext}
                     className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-bold shadow-md transition-all ${isLastSlide
-                            ? 'bg-green-600 hover:bg-green-700 text-white'
-                            : 'bg-blue-600 hover:bg-blue-700 text-white'
+                        ? 'bg-green-600 hover:bg-green-700 text-white'
+                        : 'bg-blue-600 hover:bg-blue-700 text-white'
                         }`}
                 >
                     {isLastSlide ? (

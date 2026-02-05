@@ -1,5 +1,5 @@
 import api, { CreateCourseRequest, UpdateCourseRequest } from '@/services/api';
-import { Chapter } from '@/features/admin-panel/components/ChapterList';
+import { Chapter } from '@/modules/admin/components/ChapterList';
 
 export interface Course {
     id: string;

@@ -7,12 +7,7 @@ interface SlideBuilderProps {
     onChange: (updatedChapter: Chapter) => void;
 }
 
-export interface Slide {
-    id: string;
-    title: string;
-    text: string;
-    imageUrl?: string;
-}
+import { Slide } from '../../../shared/types/slide';
 
 export const SlideBuilder: React.FC<SlideBuilderProps> = ({ chapter, onChange }) => {
     const slides: Slide[] = chapter.content?.slides || [];

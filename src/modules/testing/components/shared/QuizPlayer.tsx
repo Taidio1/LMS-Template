@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Question } from '../../admin-panel/components/QuizBuilder';
+import { Question } from '../../types/types';
 import { Check, X } from 'lucide-react';
 
 interface QuizPlayerProps {
-    content: any;
+    content: { questions: Question[] };
     onComplete: (score: number) => void;
     onSave?: (score: number, answers?: any[]) => Promise<void>;
     onAnswerChange?: (questionId: string, optionIndex: number) => void;
@@ -19,10 +19,6 @@ export const QuizPlayer: React.FC<QuizPlayerProps> = ({ content, onComplete, onS
             const initialMap: Record<string, number> = {};
             // Map our saved answer format back to the local state format
             initialAnswers.forEach((ans) => {
-                // We need the question ID. 
-                // Problem: saved answers rely on 'questionIndex' because JSON questions don't always have stable IDs if edited (or maybe they do).
-                // But QuizPlayer uses `questions[index].id` as key.
-                // Let's safe-guard by index if available.
                 const question = questions[ans.questionIndex];
                 if (question) {
                     initialMap[question.id] = ans.selectedOptionIndex;
@@ -33,12 +29,6 @@ export const QuizPlayer: React.FC<QuizPlayerProps> = ({ content, onComplete, onS
         return {};
     });
 
-    // Determine if we should start in submitted state
-    // If we have answers for all questions or specific flag?
-    // Let's assume if we have as many answers as questions, it is submitted.
-    // Or simpler: pass 'isCompleted' or similar prop? 
-    // Actually, if initialAnswers are passed, it implies we are reloading a state.
-    // Let's infer 'isSubmitted' if we have answers.
     const hasPriorState = initialAnswers && initialAnswers.length > 0;
     const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -46,15 +36,8 @@ export const QuizPlayer: React.FC<QuizPlayerProps> = ({ content, onComplete, onS
     useEffect(() => {
         if (hasPriorState && !isSubmitted) {
             setIsSubmitted(true);
-            // Calculate score for display
             let correctCount = 0;
             questions.forEach((q, _idx) => {
-                // Find answer by ID or index
-                // We reconstructed userAnswers map above so we can use it, but state updates might be async in effect?
-                // No, we initialized state. So userAnswers is ready.
-                // Wait, accessing state in effect that runs once? 
-                // We should rather calculate it purely from initialAnswers to be safe.
-                // But let's use the same logic as render.
                 const ansIndex = userAnswers[q.id];
                 if (ansIndex === q.correctOptionIndex) {
                     correctCount++;
@@ -63,7 +46,7 @@ export const QuizPlayer: React.FC<QuizPlayerProps> = ({ content, onComplete, onS
             const calculatedScore = Math.round((correctCount / questions.length) * 100);
             setScore(calculatedScore);
         }
-    }, []); // Run once on mount
+    }, [hasPriorState, isSubmitted, questions, userAnswers]);
 
     const [score, setScore] = useState(0);
 
@@ -100,12 +83,10 @@ export const QuizPlayer: React.FC<QuizPlayerProps> = ({ content, onComplete, onS
                 selectedOptionIndex: userAnswers[q.id],
                 isCorrect: userAnswers[q.id] === q.correctOptionIndex
             }));
-            console.log('[QuizPlayer] Saving answers:', resultAnswers);
-            await onSave(calculatedScore, resultAnswers as any);
+            await onSave(calculatedScore, resultAnswers);
         }
 
         setIsSubmitted(true);
-        // onComplete(calculatedScore); // Wait for user to click continue
     };
 
     const handleContinue = () => {
@@ -129,11 +110,11 @@ export const QuizPlayer: React.FC<QuizPlayerProps> = ({ content, onComplete, onS
                         <div key={q.id} className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
                             <h3 className="font-semibold text-lg text-gray-800 mb-4">
                                 <span className="text-blue-500 mr-2">{index + 1}.</span>
-                                {q.question}
+                                {q.text}
                             </h3>
 
                             <div className="space-y-3">
-                                {q.options.map((opt, optIdx) => {
+                                {q.options?.map((opt, optIdx) => {
                                     const isSelected = userAnswer === optIdx;
                                     let optionClass = "border-gray-200 hover:bg-gray-50";
 

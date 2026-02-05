@@ -62,41 +62,24 @@ export const startAttempt = async (testId: string): Promise<TestAttempt> => {
 };
 
 export const syncAnswers = async (attemptId: string, responses: Record<string, string | string[]>) => {
-    // In a granular system, we'd send individual answers.
-    // Here we might just auto-save locally or trigger a 'heartbeat' endpoint.
-    // For now, we'll assume the final submit sends everything, or implement a bulk update if needed.
-    // Implementation: valid placeholder.
-    console.log(`[AutoSave] Attempt ${attemptId}:`, responses);
+    // Auto-save progress
+    try {
+        await api.post(`/tests/attempt/${attemptId}/save`, { answers: responses });
+    } catch (error) {
+        console.error('[AutoSave] Failed', error);
+    }
 };
 
 export const finalizeAttempt = async (attemptId: string, state: TestSessionState): Promise<{ passed: boolean; score: number }> => {
-    // Calculate score locally or let backend do it.
-    // Backend `finalizeAttempt` expects score/passed currently (based on controller I wrote).
-
-    // Simple Client-side calculation (should be server-side in prod)
-    let score = 0;
-    let totalPoints = 0;
-
-    // We need questions to calc score. State doesn't have them easily accessible 
-    // unless we pass them or logic is in context. 
-    // Assuming 'state.questions' or similar is accessible? 
-    // Actually TestSessionState has 'answers'. 
-
-    // CRITICAL: We need to calc score here to send to backend, OR backend calculates it.
-    // My backend controller expects: { score, passed }.
-    // I will mock the calc here for now assuming constant points.
-
-    // Ideally: await api.post(`/tests/attempt/${attemptId}/finalize`, { answers: state.answers });
-    // But sticking to the Plan's controller interface:
-    const mockScore = 85; // TODO: Implement real calc
-    const passed = mockScore >= 80;
-
-    await api.post(`/tests/attempt/${attemptId}/finalize`, {
-        score: mockScore,
-        passed
+    // Send answers to backend for final calculation and storage
+    const response = await api.post<{ passed: boolean, score: number }>(`/tests/attempt/${attemptId}/finalize`, {
+        answers: state.answers
     });
 
-    return { passed, score: mockScore };
+    return {
+        passed: response.passed,
+        score: response.score
+    };
 };
 
 // Builder: Create Test

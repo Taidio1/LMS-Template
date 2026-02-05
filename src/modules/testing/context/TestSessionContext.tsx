@@ -16,9 +16,16 @@ const initialState: TestSessionState = {
 
 const testSessionReducer = (state: TestSessionState, action: TestSessionAction): TestSessionState => {
     switch (action.type) {
+        case 'INIT_START':
+            return {
+                ...state,
+                isLoading: true,
+                error: null,
+            };
         case 'INIT_SESSION':
             return {
                 ...state,
+                isLoading: false,
                 isSessionActive: true,
                 currentAttempt: action.payload.attempt,
                 assignment: action.payload.assignment,
@@ -92,6 +99,13 @@ export const TestSessionProvider: React.FC<{ children: React.ReactNode; assignme
     });
 
     const startSession = useCallback(async (assId: string) => {
+        // Prevent concurrent generic calls if already loading
+        // Note: We can't easily access current state 'isLoading' inside useCallback without adding it to dependency,
+        // which might restart logic. But dispatch is safe.
+        // Better: The caller (Page) checks isLoading.
+
+        dispatch({ type: 'INIT_START', payload: {} });
+
         try {
             const assignment = await testApi.getAssignment(assId);
             // Use the resolved testId from the assignment to start the attempt
@@ -105,7 +119,8 @@ export const TestSessionProvider: React.FC<{ children: React.ReactNode; assignme
                 payload: { assignment, attempt }
             });
         } catch (err) {
-            dispatch({ type: 'SET_ERROR', payload: 'Failed to start session' });
+            console.error(err);
+            dispatch({ type: 'SET_ERROR', payload: 'Failed to start session. ' + (err instanceof Error ? err.message : '') });
         }
     }, []);
 

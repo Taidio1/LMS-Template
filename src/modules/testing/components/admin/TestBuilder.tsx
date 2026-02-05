@@ -187,26 +187,7 @@ export const TestBuilder: React.FC = () => {
                             </div>
                         )}
 
-                        {q.type === 'open' && (
-                            <div className="pl-4 border-l-2 border-gray-100">
-                                <textarea
-                                    disabled
-                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-500 cursor-not-allowed resize-none"
-                                    rows={3}
-                                    placeholder="Pole tekstowe dla uczestnika pojawi się tutaj..."
-                                />
-                                <div className="mt-3">
-                                    <label className="text-xs font-medium text-gray-500 mb-1 block">Wzorcowa odpowiedź (dla sprawdzającego)</label>
-                                    <input
-                                        type="text"
-                                        value={q.correctAnswerText || ''}
-                                        onChange={(e) => updateQuestion(q.id, { correctAnswerText: e.target.value })}
-                                        className="w-full text-sm border border-gray-200 rounded px-3 py-2"
-                                        placeholder="Opcjonalnie: wpisz kluczowe słowa lub poprawną odpowiedź"
-                                    />
-                                </div>
-                            </div>
-                        )}
+
                     </div>
                 ))}
             </div>
@@ -220,13 +201,7 @@ export const TestBuilder: React.FC = () => {
                     <CheckCircle2 size={18} className="text-blue-500" />
                     Pytanie Zamknięte
                 </button>
-                <button
-                    onClick={() => addQuestion('open')}
-                    className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 shadow-sm rounded-lg hover:bg-gray-50 text-gray-700 font-medium transition-transform active:scale-95"
-                >
-                    <FileText size={18} className="text-purple-500" />
-                    Pytanie Otwarte
-                </button>
+
             </div>
 
             {/* Save Footer */}

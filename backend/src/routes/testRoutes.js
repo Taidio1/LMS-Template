@@ -17,5 +17,6 @@ router.get('/:id', authMiddleware, testController.getTest);
 router.get('/results', authMiddleware, testController.getTestResults);
 router.post('/attempt/start', authMiddleware, testController.startAttempt);
 router.post('/attempt/:attemptId/finalize', authMiddleware, testController.finalizeAttempt);
+router.post('/attempt/:attemptId/save', authMiddleware, testController.saveProgress);
 
 module.exports = router;

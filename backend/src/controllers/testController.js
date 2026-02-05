@@ -6,6 +6,42 @@ const db = require('../config/database');
 // I'll stick to async/await with db.execute/query if available, or wrap.
 // ADJUSTMENT: The existing codebase likely uses a specific pattern. I'll assume standard pool/promise.
 
+
+// Helper to save answers
+async function saveAnswersFunc(conn, attemptId, answers) {
+    if (!answers) return;
+    for (const [qId, optIdx] of Object.entries(answers)) {
+        // Validation: Verify question belongs to test? 
+        // Optimization: Could batch fetch, but loop is fine for MVP.
+
+        const [dbAnswers] = await conn.execute(
+            `SELECT id, is_correct, order_index FROM test_answers WHERE question_id = ? ORDER BY order_index ASC`,
+            [qId]
+        );
+
+        // Ensure optIdx is a valid index for the dbAnswers array
+        const selectedIndex = Number(optIdx);
+        if (dbAnswers[selectedIndex]) {
+            const answerId = dbAnswers[selectedIndex].id;
+            const isCorrect = dbAnswers[selectedIndex].is_correct;
+
+            // Delete existing for this question/attempt (handling re-answers)
+            await conn.execute(
+                `DELETE FROM test_user_answers WHERE attempt_id = ? AND question_id = ?`,
+                [attemptId, qId]
+            );
+
+            await conn.execute(
+                `INSERT INTO test_user_answers (attempt_id, question_id, answer_id, is_correct, answered_at)
+                 VALUES (?, ?, ?, ?, NOW())`,
+                [attemptId, qId, answerId, isCorrect]
+            );
+        } else {
+            console.warn(`Invalid answer index ${optIdx} for question ${qId}. Available options: ${dbAnswers.length}`);
+        }
+    }
+}
+
 exports.createTest = async (req, res) => {
     const conn = await db.getConnection();
     try {
@@ -147,42 +183,133 @@ exports.getTest = async (req, res) => {
 
 exports.startAttempt = async (req, res) => {
     // Creates a new attempt entry
-    const { testId, userId } = req.body; // In real app, userId from token
+    const { testId, userId: reqUserId } = req.body; // In real app, userId from token
+    const userId = reqUserId || req.user.userId;
 
+    const conn = await db.getConnection();
     try {
-        const [result] = await db.execute(
+        await conn.beginTransaction();
+
+        // 1. Check if user already has attempts and if max attempts reached
+        // Get Max Attempts from optional assignment override or test default
+        // For simplicity here, we check test default. 
+        // Ideally we should look up assignment override (TODO: Join with assignments)
+
+        const [testInfo] = await conn.execute('SELECT max_attempts FROM tests WHERE id = ?', [testId]);
+        if (testInfo.length === 0) throw new Error('Test not found');
+        const defaultMax = testInfo[0].max_attempts;
+
+        // Count existing attempts
+        const [attempts] = await conn.execute(
+            'SELECT COUNT(*) as count FROM test_attempts WHERE test_id = ? AND user_id = ?',
+            [testId, userId]
+        );
+        const attemptCount = attempts[0].count;
+
+        // TODO: If we strictly follow assignment rules, we should check assignment override here.
+        // But for "Course Test" usually it's 1 or defined in test.
+        if (defaultMax && attemptCount >= defaultMax) {
+            throw new Error('Max attempts reached');
+        }
+
+        const attemptNumber = attemptCount + 1;
+
+        const [result] = await conn.execute(
             `INSERT INTO test_attempts (test_id, user_id, started_at, status, attempt_number)
-             VALUES (?, ?, NOW(), 'in_progress', 1)`,
-            // Note: attempt_number logic needs query to count previous, simplifying for now
-            [testId, userId || req.user.userId]
+             VALUES (?, ?, NOW(), 'in_progress', ?)`,
+            [testId, userId, attemptNumber]
         );
 
+        await conn.commit();
         res.status(201).json({ attemptId: result.insertId });
     } catch (error) {
+        await conn.rollback();
         console.error('Error starting attempt:', error);
-        res.status(500).json({ message: 'Error starting attempt' });
+        if (error.message === 'Max attempts reached') {
+            res.status(403).json({ message: 'Max attempts reached' });
+        } else {
+            res.status(500).json({ message: 'Error starting attempt' });
+        }
+    } finally {
+        conn.release();
+    }
+};
+
+exports.saveProgress = async (req, res) => {
+    const conn = await db.getConnection();
+    try {
+        await conn.beginTransaction();
+        const { attemptId } = req.params;
+        const { answers } = req.body; // Expect { qId: optIdx }
+
+        await saveAnswersFunc(conn, attemptId, answers);
+
+        await conn.commit();
+        res.json({ message: 'Progress saved' });
+    } catch (error) {
+        await conn.rollback();
+        console.error('Error saving progress:', error);
+        res.status(500).json({ message: 'Error saving progress' });
+    } finally {
+        conn.release();
     }
 };
 
 exports.finalizeAttempt = async (req, res) => {
-    // Simple finalization: Score should be calculated based on user answers stored in DB
-    // For this MVP step, we might trust the frontend score or calculate it here.
-    // Better: Calculate here.
-
-    const { attemptId } = req.params;
-    const { score, passed } = req.body; // Accessing calculated result from frontend for now to match current architecture
-
+    const conn = await db.getConnection();
     try {
-        await db.execute(
+        await conn.beginTransaction();
+        const { attemptId } = req.params;
+        const { answers } = req.body;
+
+        // 1. Save Answer Progress
+        if (answers) {
+            await saveAnswersFunc(conn, attemptId, answers);
+        }
+
+        // 2. Score Calculation (Server-side)
+        // Check if attempt exists
+        const [attempts] = await conn.execute('SELECT test_id, user_id FROM test_attempts WHERE id = ?', [attemptId]);
+        if (attempts.length === 0) {
+            throw new Error('Attempt not found');
+        }
+        const attempt = attempts[0];
+        const testId = attempt.test_id;
+
+        // Get Total Questions
+        const [qs] = await conn.execute('SELECT COUNT(*) as count FROM test_questions WHERE test_id = ?', [testId]);
+        const totalQuestions = qs[0].count;
+
+        // Get Correct Answers Count from DB
+        const [correctRow] = await conn.execute(
+            `SELECT COUNT(*) as count FROM test_user_answers WHERE attempt_id = ? AND is_correct = 1`,
+            [attemptId]
+        );
+        const correctCount = correctRow[0].count;
+
+        const score = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+
+        // Get Passing Threshold
+        const [testInfo] = await conn.execute('SELECT pass_threshold FROM tests WHERE id = ?', [testId]);
+        const passThreshold = testInfo[0].pass_threshold;
+        const passed = score >= passThreshold;
+
+        // Update Attempt
+        await conn.execute(
             `UPDATE test_attempts 
              SET status = 'completed', completed_at = NOW(), score = ?, passed = ?
              WHERE id = ?`,
             [score, passed, attemptId]
         );
-        res.json({ message: 'Attempt finalized' });
+
+        await conn.commit();
+        res.json({ message: 'Attempt finalized', score, passed });
     } catch (error) {
+        await conn.rollback();
         console.error('Error finalizing attempt:', error);
         res.status(500).json({ message: 'Error finalizing attempt' });
+    } finally {
+        conn.release();
     }
 };
 

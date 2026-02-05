@@ -9,8 +9,11 @@ const TestSessionContent: React.FC = () => {
     const { assignment, startSession, isSessionActive, isLoading, error } = useTestSession();
     const { assignmentId } = useParams<{ assignmentId: string }>();
 
+    const initializedRef = React.useRef(false);
+
     useEffect(() => {
-        if (assignmentId && !isSessionActive && !isLoading && !assignment) {
+        if (assignmentId && !isSessionActive && !isLoading && !assignment && !initializedRef.current) {
+            initializedRef.current = true;
             startSession(assignmentId);
         }
     }, [assignmentId, isSessionActive, isLoading, assignment, startSession]);

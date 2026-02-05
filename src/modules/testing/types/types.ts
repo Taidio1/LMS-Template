@@ -47,6 +47,7 @@ export interface TestSessionState {
 }
 
 export type TestSessionAction =
+    | { type: 'INIT_START'; payload: any }
     | { type: 'INIT_SESSION'; payload: { attempt: TestAttempt; assignment: TestAssignment } }
     | { type: 'UPDATE_ANSWER'; payload: { questionId: string; answer: any } }
     | { type: 'SYNC_ANSWERS_SUCCESS' }

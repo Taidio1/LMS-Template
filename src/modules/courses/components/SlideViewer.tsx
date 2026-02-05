@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { Slide } from '../../../shared/types/slide';
+import { resolveFileUrl } from '@/lib/utils';
 
 interface SlideViewerProps {
     content: any;
@@ -53,9 +54,17 @@ export const SlideViewer: React.FC<SlideViewerProps> = ({ content, onComplete })
                     {currentSlide.imageUrl && (
                         <div className="flex justify-center">
                             <img
-                                src={currentSlide.imageUrl}
+                                src={(() => {
+                                    const resolved = resolveFileUrl(currentSlide.imageUrl);
+                                    console.log('SlideViewer resolved image:', resolved);
+                                    return resolved;
+                                })()}
                                 alt={currentSlide.title}
                                 className="max-h-80 object-contain rounded-lg shadow-sm"
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).style.visibility = 'hidden';
+                                    (e.target as HTMLImageElement).parentElement!.style.display = 'none';
+                                }}
                             />
                         </div>
                     )}

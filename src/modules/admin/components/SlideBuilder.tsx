@@ -1,6 +1,7 @@
 import React from 'react';
 import { Chapter } from './ChapterList';
 import { Plus, Trash2, Image as ImageIcon } from 'lucide-react';
+import { resolveFileUrl } from '@/lib/utils';
 
 interface SlideBuilderProps {
     chapter: Chapter;
@@ -100,10 +101,23 @@ export const SlideBuilder: React.FC<SlideBuilderProps> = ({ chapter, onChange })
                                         onChange={(e) => updateSlide(slide.id, 'imageUrl', e.target.value)}
                                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 mb-2"
                                         placeholder="https://..."
+                                        onBlur={(e) => updateSlide(slide.id, 'imageUrl', e.target.value.trim())}
                                     />
                                     {slide.imageUrl ? (
-                                        <div className="w-full h-40 bg-gray-200 rounded overflow-hidden flex items-center justify-center">
-                                            <img src={slide.imageUrl} alt="Preview" className="h-full object-contain" />
+                                        <div className="w-full h-40 bg-gray-200 rounded overflow-hidden flex items-center justify-center relative group">
+                                            <img
+                                                src={resolveFileUrl(slide.imageUrl)}
+                                                alt="Preview"
+                                                className="h-full object-contain"
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).style.display = 'none';
+                                                    (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                                                }}
+                                            />
+                                            <div className="hidden absolute inset-0 flex flex-col items-center justify-center text-red-500 bg-gray-100">
+                                                <ImageIcon size={24} className="mb-1 opacity-50" />
+                                                <span className="text-xs font-medium">Failed to load image</span>
+                                            </div>
                                         </div>
                                     ) : (
                                         <div className="w-full h-40 bg-gray-100 border border-dashed border-gray-300 rounded flex flex-col items-center justify-center text-gray-400">

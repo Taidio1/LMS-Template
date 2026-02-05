@@ -272,7 +272,7 @@ const updateChapters = async (req, res) => {
                             chapterId,
                             slide.title || 'Untitled Slide',
                             slide.text || '',
-                            slide.imageUrl || null,
+                            slide.imageUrl ? slide.imageUrl.trim() : null,
                             null, // image_name
                             sIdx // order
                         );

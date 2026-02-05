@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Chapter } from './ChapterList';
 import { FileText, Upload, X, Eye } from 'lucide-react';
 import api from '@/services/api';
+import { DocumentViewer } from '../../courses/components/DocumentViewer';
 
 interface DocumentBuilderProps {
     chapter: Chapter;
@@ -10,6 +11,7 @@ interface DocumentBuilderProps {
 
 export const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ chapter, onChange }) => {
     const [isUploading, setIsUploading] = useState(false);
+    const [showPreview, setShowPreview] = useState(false);
     const content = chapter.content || {};
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,15 +81,13 @@ export const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ chapter, onCha
                         </p>
 
                         <div className="flex space-x-4">
-                            <a
-                                href={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${content.url}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                            <button
+                                onClick={() => setShowPreview(true)}
                                 className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
                             >
                                 <Eye size={18} />
                                 <span>Preview</span>
-                            </a>
+                            </button>
                             <button
                                 onClick={handleRemoveFile}
                                 className="flex items-center space-x-2 px-4 py-2 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors"
@@ -132,6 +132,26 @@ export const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ chapter, onCha
                     </div>
                 )}
             </div>
+
+            {/* Preview Modal */}
+            {showPreview && content.url && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4">
+                    <div className="bg-white w-full h-full max-w-6xl max-h-[90vh] rounded-lg shadow-2xl flex flex-col relative overflow-hidden">
+                        <button
+                            onClick={() => setShowPreview(false)}
+                            className="absolute top-4 right-4 z-50 p-2 bg-white rounded-full shadow-md text-gray-600 hover:text-red-500 hover:bg-red-50 transition-colors"
+                        >
+                            <X size={24} />
+                        </button>
+                        <div className="flex-1 overflow-hidden">
+                            <DocumentViewer
+                                content={content}
+                                onComplete={() => console.log('Preview complete')}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

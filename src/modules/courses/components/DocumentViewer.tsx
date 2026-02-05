@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { pdfjs, Document, Page } from 'react-pdf';
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, AlertCircle } from 'lucide-react';
+import { resolveFileUrl } from '@/lib/utils';
 
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -28,11 +29,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({ content, onCompl
     const [scale, setScale] = useState<number>(1.0);
     const [error, setError] = useState<string | null>(null);
 
-    const fullUrl = content.url
-        ? (content.url.startsWith('/uploads')
-            ? content.url
-            : `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${content.url}`)
-        : null;
+    const fullUrl = resolveFileUrl(content.url);
     const isPdf = content.fileType === 'pdf';
 
     function onDocumentLoadSuccess({ numPages }: { numPages: number }) {

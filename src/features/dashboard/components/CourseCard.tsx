@@ -24,7 +24,7 @@ export const CourseCard: React.FC<CourseCardProps> = ({
     isUrgent: apiIsUrgent
 }) => {
     // Use the enhanced timer hook with API-provided seconds if available
-    const timer = useCourseTimer(assignment.deadline, secondsRemaining);
+    const timer = useCourseTimer(assignment.deadline || new Date(), secondsRemaining);
 
     // Use API-provided values if available, otherwise calculate from timer
     const isOverdue = apiIsOverdue ?? (assignment.status === 'overdue' || timer.isOverdue);
@@ -83,8 +83,8 @@ export const CourseCard: React.FC<CourseCardProps> = ({
                 </div>
                 {assignment.status !== 'completed' && !isOverdue && !isLocked && (
                     <span className={`text-xs font-medium px-2 py-1 rounded ${isUrgent
-                            ? 'text-orange-600 bg-orange-50'
-                            : 'text-gray-600 bg-gray-50'
+                        ? 'text-orange-600 bg-orange-50'
+                        : 'text-gray-600 bg-gray-50'
                         }`}>
                         {isUrgent ? `Urgent: ${timer.formattedTime}` : `Due in ${timer.days}d`}
                     </span>

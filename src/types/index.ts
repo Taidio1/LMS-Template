@@ -8,6 +8,16 @@ export interface User {
   department?: string;
 }
 
+export interface TrainingCourse {
+  id: string;
+  title: string;
+  description?: string;
+  category?: string;
+  categoryName?: string;
+  thumbnailUrl?: string;
+  durationMinutes?: number;
+}
+
 export interface CourseAssignment {
   id: string;
   courseId: string;
@@ -17,6 +27,7 @@ export interface CourseAssignment {
   status: 'not_started' | 'in_progress' | 'completed' | 'overdue';
   progress?: number;
   score?: number;
+  completedAt?: string;
 }
 
 export interface Question {

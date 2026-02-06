@@ -80,11 +80,12 @@ export const CourseList: React.FC<CourseListProps> = ({ courses: propCourses }) 
     // Sort courses: Overdue -> Nearest Deadline -> Newest
     const sortedCourses = [...courses].sort((a, b) => {
         const now = new Date().getTime();
-        const aDeadline = new Date(a.deadline).getTime();
-        const bDeadline = new Date(b.deadline).getTime();
+        // Handle undefined deadlines by treating them as far future (or handle as preferred)
+        const aDeadline = a.deadline ? new Date(a.deadline).getTime() : Number.MAX_SAFE_INTEGER;
+        const bDeadline = b.deadline ? new Date(b.deadline).getTime() : Number.MAX_SAFE_INTEGER;
 
-        const aIsOverdue = a.status === 'overdue' || (a.status !== 'completed' && aDeadline < now);
-        const bIsOverdue = b.status === 'overdue' || (b.status !== 'completed' && bDeadline < now);
+        const aIsOverdue = a.status === 'overdue' || (a.status !== 'completed' && a.deadline && aDeadline < now);
+        const bIsOverdue = b.status === 'overdue' || (b.status !== 'completed' && b.deadline && bDeadline < now);
 
         // 1. Overdue first
         if (aIsOverdue && !bIsOverdue) return -1;

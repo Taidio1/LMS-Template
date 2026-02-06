@@ -1,5 +1,5 @@
 import api from '@/services/api';
-import { TestAssignment, TestAttempt, TestSessionState, Question } from '../types/types';
+import { TestAssignment, TestAttempt, TestSessionState, Question } from '@/types';
 
 // Real API implementation
 // Note: Some backend endpoints might need adjustment to match these exact signatures.

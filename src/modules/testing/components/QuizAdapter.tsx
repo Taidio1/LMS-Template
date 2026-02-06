@@ -57,7 +57,7 @@ export const QuizAdapter: React.FC = () => {
     return (
         <div className="test-session-adapter">
             <QuizPlayer
-                content={{ questions }}
+                content={{ questions: questions as any }}
                 onComplete={async (score) => {
                     await finalizeSession(); // In real app, we might pass score
                     navigate('/courses');

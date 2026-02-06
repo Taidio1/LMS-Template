@@ -7,7 +7,7 @@ interface TestHeaderProps {
 }
 
 export const TestHeader: React.FC<TestHeaderProps> = ({ totalQuestions }) => {
-    const { timeLeft, answers, assignment } = useTestSession();
+    const { timeLeft = 0, answers, assignment } = useTestSession();
 
     const answeredCount = Object.keys(answers).length;
     const progress = Math.round(((answeredCount) / totalQuestions) * 100);

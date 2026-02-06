@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useReducer, useCallback } from 'react';
-import { TestSessionState, TestSessionAction } from '../types/types';
+import { TestSessionState, TestSessionAction } from '@/types';
 import * as testApi from '../api/testApi';
 import { useTestTimer } from '../hooks/useTestTimer';
 import { useTestSessionGuard } from '../hooks/useTestSessionGuard';
 
 const initialState: TestSessionState = {
+    currentQuestionIndex: 0,
+    timeRemainingSeconds: 0,
     isLoading: false,
     isSessionActive: false,
     currentAttempt: null,
@@ -75,10 +77,10 @@ export const useTestSession = () => {
     return context;
 };
 
-export const TestSessionProvider: React.FC<{ children: React.ReactNode; assignmentId: string }> = ({
+export const TestSessionProvider = ({
     children,
     // assignmentId,
-}) => {
+}: { children: React.ReactNode; assignmentId: string }) => {
     const [state, dispatch] = useReducer(testSessionReducer, initialState);
 
     // Timer Hook
@@ -93,7 +95,7 @@ export const TestSessionProvider: React.FC<{ children: React.ReactNode; assignme
     });
 
     // Session Guard
-    useTestSessionGuard(state.isSessionActive, () => {
+    useTestSessionGuard(state.isSessionActive ?? false, () => {
         // onInterrupt logic
         finalizeSession();
     });
@@ -162,5 +164,5 @@ export const TestSessionProvider: React.FC<{ children: React.ReactNode; assignme
         <TestSessionContext.Provider value={value}>
             {children}
         </TestSessionContext.Provider>
-    );
+    ) as React.ReactElement;
 };

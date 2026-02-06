@@ -6,7 +6,7 @@ import { TestListView } from '../components/admin/TestListView';
 import { LayoutList, BookOpenCheck, Edit3, Database } from 'lucide-react';
 
 export const TestingAdminPage: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'assignments' | 'results' | 'builder'>('assignments');
+    const [activeTab, setActiveTab] = useState<'assignments' | 'results' | 'builder' | 'list'>('assignments');
 
     return (
         <div className="p-8 max-w-7xl mx-auto">

@@ -88,7 +88,7 @@ export const createTest = async (testData: any) => {
 };
 
 // Admin: List Tests
-export const getTests = async () => {
+export const getTests = async (): Promise<any[]> => {
     return await api.get('/tests');
 };
 
